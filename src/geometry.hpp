@@ -12,27 +12,11 @@ static const double kEpsilon = 0.000001;
 
 //=============================================================================
 
-struct Point {
+struct Vector {
     double x = NAN, y = NAN, z = NAN;
 
-    Point() = default;
-    Point(double x, double y, double z) : x(x), y(y), z(z) {}
-
-    bool is_valid() const {
-        return !std::isnan(x) && !std::isnan(y) && !std::isnan(z);
-    }
-    bool operator==(const Point &rhs) const {
-        return (fabs(x - rhs.x) < kEpsilon) && (fabs(y - rhs.y) < kEpsilon) &&
-               (fabs(z - rhs.z) < kEpsilon);
-    }
-};
-
-//=============================================================================
-
-struct Vector : public Point {
     Vector() = default;
-    Vector(double x, double y, double z) : Point(x, y, z) {}
-    Vector(const Point &a) : Point(a) {}
+    Vector(double x, double y, double z) : x(x), y(y), z(z) {}
 
     double module2() const { return x * x + y * y + z * z; }
     double module() const { return std::sqrt(module2()); }
@@ -60,9 +44,18 @@ struct Vector : public Point {
         z += rhs.z;
         return *this;
     }
+
+    bool operator==(const Vector &rhs) const {
+        return (fabs(x - rhs.x) < kEpsilon) && (fabs(y - rhs.y) < kEpsilon) &&
+               (fabs(z - rhs.z) < kEpsilon);
+    }
+
+    bool is_valid() const {
+        return !std::isnan(x) && !std::isnan(y) && !std::isnan(z);
+    }
 };
 
-std::ostream &operator<<(std::ostream &out, const Point &point) {
+std::ostream &operator<<(std::ostream &out, const Vector &point) {
     return out << "{" << point.x << ", " << point.y << ", " << point.z << "}";
 }
 
@@ -83,41 +76,40 @@ Vector operator+(Vector lhs, const Vector &rhs) {
 // z = z_0 + c*t
 //=============================================================================
 
-struct Line {
-    Vector direct;
-    Vector begin;
+// struct Line {
+//     Vector direct;
+//     Vector begin;
 
-    // TODO add 3D
-    Line(const Point &first, const Point &second)
-        : begin(first),
-          direct(second.x - first.x, second.y - first.y, second.z - first.z) {}
+//     Line(const Vector &first, const Vector &second)
+//         : begin(first),
+//           direct(second.x - first.x, second.y - first.y, second.z - first.z) {}
 
-    bool is_valid() const { return begin.is_valid() && direct.is_valid(); }
+//     bool is_valid() const { return begin.is_valid() && direct.is_valid(); }
 
-    Vector get_intersect(const Line &other) const {
-        Vector normal_vec = direct.cross(other.direct);
+//     Vector get_intersect(const Line &other) const {
+//         Vector normal_vec = direct.cross(other.direct);
 
-        double t = (direct.cross(other.begin - begin) * normal_vec) /
-                   normal_vec.module2();
+//         double t = (direct.cross(other.begin - begin) * normal_vec) /
+//                    normal_vec.module2();
 
-        if (!std::isnan(t)) {
-            return other.begin + direct * t;
-        }
-        return {};
-    }
-};
+//         if (!std::isnan(t)) {
+//             return other.begin + direct * t;
+//         }
+//         return {};
+//     }
+// };
 
-std::ostream &operator<<(std::ostream &out, const Line &line) {
-    // x = x_0 + a * t
-    const char *signa = (line.direct.x >= 0.0) ? "+" : "";
-    const char *signb = (line.direct.y >= 0.0) ? "+" : "";
-    const char *signc = (line.direct.z >= 0.0) ? "+" : "";
-    out << "x = " << line.begin.x << signa << line.direct.x << "*t\n";
-    out << "y = " << line.begin.y << signb << line.direct.y << "*t\n";
-    out << "z = " << line.begin.z << signc << line.direct.z << "*t\n";
+// std::ostream &operator<<(std::ostream &out, const Line &line) {
+//     // x = x_0 + a * t
+//     const char *signa = (line.direct.x >= 0.0) ? "+" : "";
+//     const char *signb = (line.direct.y >= 0.0) ? "+" : "";
+//     const char *signc = (line.direct.z >= 0.0) ? "+" : "";
+//     out << "x = " << line.begin.x << signa << line.direct.x << "*t\n";
+//     out << "y = " << line.begin.y << signb << line.direct.y << "*t\n";
+//     out << "z = " << line.begin.z << signc << line.direct.z << "*t\n";
 
-    return out;
-}
+//     return out;
+// }
 
 //=============================================================================
 
@@ -128,7 +120,7 @@ struct LineSegment {
     LineSegment(const Vector &begin, const Vector &direct)
         : begin(begin), end(begin + direct) {}
 
-    // only works if line segments in one plane
+    // Работает только если отрезки в одной плоскости
     Vector get_one_plane_intersect(const LineSegment &other) const {
         double numerator =
             (other.end.y - end.y) * (other.end.x - other.begin.x) -
